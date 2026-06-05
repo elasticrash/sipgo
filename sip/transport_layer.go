@@ -45,6 +45,10 @@ type TransportLayer struct {
 	// dnsPreferSRV does always SRV lookup first
 	dnsPreferSRV bool
 	dnsPreferIP  int // 0 - no preference , 1 -ip4, 2 - ip6
+
+	// wsPath is the request path used when dialing ws/wss (e.g. "/ws").
+	// Empty means "/" (default).
+	wsPath string
 }
 
 type TransportLayerOption func(l *TransportLayer)
@@ -72,6 +76,14 @@ func WithTransportLayerDNSLookupSRV(preferSRV bool) TransportLayerOption {
 func WithTransportLayerReadFilter(f TransportReadFilter) TransportLayerOption {
 	return func(l *TransportLayer) {
 		l.readFilter = f
+	}
+}
+
+// WithTransportLayerWebsocketPath sets the request path used when dialing
+// ws/wss connections, e.g. "/ws". Default is "/".
+func WithTransportLayerWebsocketPath(path string) TransportLayerOption {
+	return func(l *TransportLayer) {
+		l.wsPath = path
 	}
 }
 
@@ -154,13 +166,14 @@ func NewTransportLayer(
 		WS: &TransportWS{
 			log:        l.log.With("caller", "Transport<WS>"),
 			readFilter: l.readFilter,
+			DialURI:    func(host string) string { return "ws://" + host + l.wsPath },
 		},
 		// TODO. Using default dial tls, but it needs to configurable via client
 		WSS: &TransportWSS{
 			TransportWS: &TransportWS{
 				log:             l.log.With("caller", "Transport<WSS>"),
 				connectionReuse: l.connectionReuse,
-				DialURI:         func(host string) string { return "wss://" + host },
+				DialURI:         func(host string) string { return "wss://" + host + l.wsPath },
 				readFilter:      l.readFilter,
 			},
 		},

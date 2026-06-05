@@ -91,7 +91,7 @@ func (t *TransportWSS) CreateConnection(ctx context.Context, laddr Addr, raddr A
 		log.Debug("Setuping TLS connection", "hostname", hostname)
 		tlsConn := t.dialer.TLSClient(conn, hostname)
 
-		u, err := url.ParseRequestURI("wss://" + addr)
+		u, err := url.ParseRequestURI(t.DialURI(addr))
 		if err != nil {
 			return nil, fmt.Errorf("parse request wss uri failed: %w", err)
 		}
